@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2E5A8C">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FastFit">
+<title>FastFit — Plan Tracker</title>
+<style>
+  :root{
+    --accent:#2E5A8C; --accent2:#3E77B5; --light:#EAF1F8; --band:#D6E3F0;
+    --ink:#1c2733; --grey:#667; --line:#dde5ee; --ok:#2e7d51; --warn:#c0392b;
+    --bg:#f4f7fb; --card:#ffffff; --radius:16px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45;
+    padding-bottom:calc(72px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; padding:calc(14px + env(safe-area-inset-top)) 18px 16px;
+    position:sticky; top:0; z-index:20;
+  }
+  header h1{margin:0; font-size:19px; letter-spacing:.2px; display:flex; align-items:center; gap:8px}
+  header .sub{opacity:.85; font-size:12px; margin-top:2px}
+  main{padding:14px; max-width:640px; margin:0 auto}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(30,50,80,.05)}
+  .card h2{margin:0 0 10px; font-size:15px; color:var(--accent); display:flex; align-items:center; gap:8px}
+  .muted{color:var(--grey); font-size:13px}
+  .row{display:flex; gap:10px; align-items:center}
+  .between{display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .pill{display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600}
+  .pill.fast{background:#e8eefc; color:#33488a}
+  .pill.eat{background:#e5f4ec; color:#1f7a4d}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:12px; font-size:15px; font-weight:600; padding:12px 16px; transition:transform .05s, opacity .15s}
+  button:active{transform:scale(.98)}
+  .btn{background:var(--accent); color:#fff; width:100%}
+  .btn.sec{background:var(--light); color:var(--accent)}
+  .btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--band)}
+  .btn.warn{background:#fdecea; color:var(--warn)}
+  .btn.sm{padding:8px 12px; font-size:13px; width:auto}
+  .timer{font-size:40px; font-weight:800; letter-spacing:1px; text-align:center; margin:6px 0 2px; font-variant-numeric:tabular-nums}
+  .ring-wrap{display:flex; justify-content:center; margin:6px 0}
+  svg.ring{width:190px; height:190px}
+  .ringlabel{text-align:center}
+  .ringlabel .big{font-size:15px; font-weight:700}
+  .check{display:flex; align-items:flex-start; gap:12px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .check:last-child{border-bottom:none}
+  .check .box{flex:0 0 26px; height:26px; border-radius:8px; border:2px solid var(--band); background:#fff; display:flex; align-items:center; justify-content:center; margin-top:1px; font-size:16px; color:#fff}
+  .check.done .box{background:var(--ok); border-color:var(--ok)}
+  .check .title{font-weight:600; font-size:14px}
+  .check.done .title{text-decoration:line-through; color:var(--grey)}
+  .check .time{font-size:12px; color:var(--accent); font-weight:700}
+  .check .desc{font-size:12.5px; color:var(--grey)}
+  .tag{font-size:11px; padding:1px 7px; border-radius:6px; background:var(--light); color:var(--accent); font-weight:600; margin-left:6px}
+  input,select,textarea{font-family:inherit; font-size:16px; width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
+  label.fld{display:block; font-size:12px; font-weight:600; color:var(--grey); margin:10px 0 4px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  table{width:100%; border-collapse:collapse; font-size:13px}
+  th,td{padding:7px 6px; text-align:left; border-bottom:1px solid var(--line)}
+  th{color:var(--accent); font-size:11px; text-transform:uppercase; letter-spacing:.4px}
+  td.n{text-align:center; font-variant-numeric:tabular-nums}
+  .stat{display:flex; gap:10px}
+  .stat .box2{flex:1; background:var(--light); border-radius:12px; padding:10px; text-align:center}
+  .stat .box2 .v{font-size:20px; font-weight:800; color:var(--accent)}
+  .stat .box2 .l{font-size:11px; color:var(--grey)}
+  nav{position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line);
+    display:flex; z-index:30; padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1; background:none; border:none; padding:9px 2px 8px; border-radius:0; color:var(--grey); font-size:10.5px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px}
+  nav button .ic{font-size:20px; line-height:1}
+  nav button.active{color:var(--accent)}
+  .view{display:none} .view.active{display:block}
+  .day{border:1px solid var(--line); border-radius:12px; margin-bottom:10px; overflow:hidden}
+  .day .dh{background:var(--accent); color:#fff; padding:9px 12px; font-weight:700; font-size:13px; display:flex; justify-content:space-between}
+  .day .db{padding:6px 12px 10px}
+  .toast{position:fixed; left:14px; right:14px; bottom:calc(80px + env(safe-area-inset-bottom)); background:var(--ink); color:#fff; padding:13px 16px; border-radius:12px; z-index:50; box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:14px; opacity:0; transform:translateY(10px); transition:.25s; pointer-events:none}
+  .toast.show{opacity:1; transform:translateY(0)}
+  .banner{background:linear-gradient(135deg,#eaf1f8,#dbe7f5); border:1px solid var(--band); border-radius:14px; padding:14px; margin-bottom:14px}
+  .banner .big{font-size:16px; font-weight:800; color:var(--accent)}
+  .note{font-size:12px; color:var(--grey); background:#fbfcfe; border:1px dashed var(--band); border-radius:10px; padding:10px; margin-top:10px}
+  .hide{display:none!important}
+  canvas{width:100%; height:180px; display:block}
+  .filewrap{position:relative; overflow:hidden}
+  .filewrap input[type=file]{position:absolute; inset:0; opacity:0}
+  .small{font-size:12px}
+  .center{text-align:center}
+  .del{color:var(--warn); background:none; padding:4px 8px; font-size:12px; width:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔥 FastFit <span id="statusPill"></span></h1>
+  <div class="sub" id="headSub">Your 16:8 plan tracker</div>
+</header>
+
+<main>
+  <!-- ================= TODAY ================= -->
+  <section id="v-today" class="view active">
+    <div class="banner">
+      <div class="between">
+        <div>
+          <div class="muted" id="phaseLabel">—</div>
+          <div class="big" id="phaseState">—</div>
+        </div>
+        <span class="pill" id="phasePill">—</span>
+      </div>
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#d7e2f1" stroke-width="14"/>
+          <circle id="ringFg" cx="100" cy="100" r="86" fill="none" stroke="#2E5A8C" stroke-width="14"
+            stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540" transform="rotate(-90 100 100)"/>
+          <text id="ringTime" x="100" y="97" text-anchor="middle" font-size="30" font-weight="800" fill="#2E5A8C">--:--</text>
+          <text id="ringSub" x="100" y="122" text-anchor="middle" font-size="12" fill="#667">until —</text>
+        </svg>
+      </div>
+      <div class="grid2">
+        <button class="btn sec sm" onclick="shiftWindowPrompt()">Adjust window</button>
+        <button class="btn sec sm" onclick="go('fast')">Fasting details</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="between"><h2 style="margin:0">🍽️ Next meal</h2><span class="muted" id="nextMealTime"></span></div>
+      <div id="nextMealBody" class="muted">—</div>
+    </div>
+
+    <div class="card">
+      <h2>✅ Today’s checklist</h2>
+      <div id="todayList"></div>
+      <button class="btn ghost sm" style="margin-top:10px; width:100%" onclick="resetToday()">Reset today’s ticks</button>
+    </div>
+  </section>
+
+  <!-- ================= FASTING ================= -->
+  <section id="v-fast" class="view">
+    <div class="card">
+      <h2>⏱️ Fasting window</h2>
+      <div class="stat" style="margin-bottom:12px">
+        <div class="box2"><div class="v" id="fLen">16h</div><div class="l">Fast</div></div>
+        <div class="box2"><div class="v" id="eLen">8h</div><div class="l">Eating</div></div>
+      </div>
+      <div class="grid2">
+        <div><label class="fld">Eating starts</label><input type="time" id="eatStart"></div>
+        <div><label class="fld">Eating ends</label><input type="time" id="eatEnd"></div>
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="saveWindow()">Save window</button>
+      <div class="note">During the fast, only water, black coffee or plain tea. A pinch of cayenne or a squeeze of lemon in water is fine to curb appetite.</div>
+    </div>
+    <div class="card">
+      <h2>🔔 Reminders</h2>
+      <div class="check"><div class="box" id="nOn">•</div><div><div class="title">Notifications</div><div class="desc" id="notifState">Tap to enable phone alerts</div></div></div>
+      <button class="btn sec" style="margin-top:10px" onclick="enableNotifs()">Enable notifications</button>
+      <label class="row" style="margin-top:12px; font-size:14px; font-weight:600; gap:10px">
+        <input type="checkbox" id="remMeals" style="width:auto" onchange="saveSettings()"> Remind me about meals
+      </label>
+      <label class="row" style="margin-top:8px; font-size:14px; font-weight:600; gap:10px">
+        <input type="checkbox" id="remSupps" style="width:auto" onchange="saveSettings()"> Remind me about supplements
+      </label>
+      <label class="row" style="margin-top:8px; font-size:14px; font-weight:600; gap:10px">
+        <input type="checkbox" id="remFast" style="width:auto" onchange="saveSettings()"> Notify when fast / eating window flips
+      </label>
+      <div class="note" id="notifNote">Reminders fire while FastFit is open in your browser. For alarms that ring when the app is closed, add this page to your home screen and keep it running, or set matching alarms in your phone’s Clock app. I can also give you a calendar file if you’d like.</div>
+    </div>
+  </section>
+
+  <!-- ================= MEALS ================= -->
+  <section id="v-meals" class="view">
+    <div class="card">
+      <h2>🍽️ Meal plan</h2>
+      <div class="muted small" id="mealTargets"></div>
+      <div id="mealsList" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <h2>🕑 Meal times</h2>
+      <div id="mealTimes"></div>
+      <div class="note">Set the clock time you want each meal reminder. Keep them inside your eating window.</div>
+    </div>
+  </section>
+
+  <!-- ================= SUPPLEMENTS ================= -->
+  <section id="v-supps" class="view">
+    <div class="card">
+      <h2>💊 Supplements</h2>
+      <div id="suppsList"></div>
+    </div>
+    <div class="card">
+      <h2>🕑 Supplement times</h2>
+      <div id="suppTimes"></div>
+      <div class="note">These are optional — food comes first. Check with your doctor or pharmacist before starting any, especially with medication or blood-pressure concerns.</div>
+    </div>
+  </section>
+
+  <!-- ================= PROGRESS ================= -->
+  <section id="v-prog" class="view">
+    <div class="card">
+      <h2>📈 Progress</h2>
+      <div class="stat">
+        <div class="box2"><div class="v" id="pNow">—</div><div class="l">Now (kg)</div></div>
+        <div class="box2"><div class="v" id="pChange">—</div><div class="l">Since start</div></div>
+        <div class="box2"><div class="v" id="pBmi">—</div><div class="l">BMI</div></div>
+      </div>
+      <canvas id="chart" width="600" height="180" style="margin-top:14px"></canvas>
+    </div>
+    <div class="card">
+      <h2>➕ Log a weigh-in</h2>
+      <div class="grid2">
+        <div><label class="fld">Date</label><input type="date" id="inDate"></div>
+        <div><label class="fld">Weight (kg)</label><input type="number" step="0.1" id="inWeight" inputmode="decimal"></div>
+      </div>
+      <div class="grid3">
+        <div><label class="fld">Waist (in)</label><input type="number" step="0.1" id="inWaist" inputmode="decimal"></div>
+        <div><label class="fld">Chest (in)</label><input type="number" step="0.1" id="inChest" inputmode="decimal"></div>
+        <div><label class="fld">Body fat %</label><input type="number" step="0.1" id="inBf" inputmode="decimal"></div>
+      </div>
+      <label class="fld">Notes</label><input type="text" id="inNote" placeholder="optional">
+      <button class="btn" style="margin-top:12px" onclick="addEntry()">Save entry</button>
+    </div>
+    <div class="card">
+      <h2>🗒️ History</h2>
+      <div id="histWrap"><div class="muted small">No entries yet.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= WORKOUT ================= -->
+  <section id="v-work" class="view">
+    <div class="card">
+      <h2>🏋️ Weekly training</h2>
+      <div id="workoutList"></div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section id="v-set" class="view">
+    <div class="card" id="installCard">
+      <h2>📲 Install FastFit</h2>
+      <div class="muted small">Add FastFit to your home screen so it opens like a normal app, full-screen and offline.</div>
+      <button class="btn hide" id="installBtn" style="margin-top:12px" onclick="installApp()">Add to home screen</button>
+      <div class="note">On <b>Android/Chrome</b> an “Add to home screen” button appears here. On <b>iPhone/Safari</b>, tap the <b>Share</b> icon then <b>Add to Home Screen</b>.</div>
+    </div>
+    <div class="card">
+      <h2>📄 Load your plan</h2>
+      <div class="muted small">Upload the Excel workbook to refresh meals, supplements, workout and your details. Your ticks and weigh-ins stay.</div>
+      <div class="filewrap" style="margin-top:12px">
+        <button class="btn">Choose Excel file (.xlsx)</button>
+        <input type="file" id="xlsxFile" accept=".xlsx,.xls" onchange="handleUpload(event)">
+      </div>
+      <div id="uploadMsg" class="small" style="margin-top:10px"></div>
+      <button class="btn sec" style="margin-top:10px" onclick="loadDefaults(true)">Reset to built-in plan</button>
+    </div>
+    <div class="card">
+      <h2>👤 Your details</h2>
+      <div class="grid2">
+        <div><label class="fld">Height (cm)</label><input type="number" id="setHeight" oninput="saveSettings()"></div>
+        <div><label class="fld">Start weight (kg)</label><input type="number" id="setStart" oninput="saveSettings()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🗓️ Calendar reminders</h2>
+      <div class="muted small">Download an .ics file with your daily meal, supplement and fasting times, then open it to add alarms to your phone’s calendar — these ring even when FastFit is closed.</div>
+      <button class="btn sec" style="margin-top:12px" onclick="downloadICS()">Download calendar file</button>
+    </div>
+    <div class="card">
+      <h2>⚠️ Data</h2>
+      <button class="btn warn" onclick="wipe()">Erase all my data</button>
+      <div class="note">Everything is stored only on this device, in this browser. Nothing is sent anywhere.</div>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-v="today" class="active" onclick="go('today')"><span class="ic">🏠</span>Today</button>
+  <button data-v="meals" onclick="go('meals')"><span class="ic">🍽️</span>Meals</button>
+  <button data-v="supps" onclick="go('supps')"><span class="ic">💊</span>Supps</button>
+  <button data-v="prog" onclick="go('prog')"><span class="ic">📈</span>Progress</button>
+  <button data-v="work" onclick="go('work')"><span class="ic">🏋️</span>Workout</button>
+  <button data-v="set" onclick="go('set')"><span class="ic">⚙️</span>Setup</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ---------- storage helpers ---------- */
+const K = {plan:'ff_plan', prog:'ff_prog', set:'ff_settings', ticks:'ff_ticks', fired:'ff_fired'};
+const load = (k, d) => { try{ const v = localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const save = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const todayKey = () => new Date().toISOString().slice(0,10);
+const pad = n => String(n).padStart(2,'0');
+
+/* ---------- default plan (matches the Excel) ---------- */
+function defaultPlan(){
+  return {
+    height:185, startWeight:135,
+    window:{start:'12:00', end:'20:00'},
+    meals:[
+      {id:'m1', name:'Meal 1', time:'12:00', items:['4 eggs with spinach & tomato','200 g plain yoghurt','1 piece of fruit'], note:'Breaks the fast'},
+      {id:'m2', name:'Meal 2', time:'16:00', items:['180–200 g grilled chicken','Large salad with olive oil','Small bulgur or rice (150 g)']},
+      {id:'sn', name:'Snack', time:'17:30', items:['1 apple + handful of almonds','or 150 g cottage cheese']},
+      {id:'m3', name:'Meal 3', time:'19:30', items:['Grilled fish or lean meat (or lentils)','Plenty of vegetables','Small whole-grain portion'], note:'Last food by end of window'}
+    ],
+    mealTargets:'≈ 2,000 kcal/day · 150–180 g protein · anchor every meal with protein.',
+    supps:[
+      {id:'s1', slot:'Morning', time:'08:00', items:['Fish oil (omega-3) 1–2 g','Vitamin D3 1000–2000 IU','Vitamin C 500–1000 mg (optional)']},
+      {id:'s2', slot:'Night', time:'22:00', items:['Magnesium 300–400 mg']},
+      {id:'s3', slot:'Before training', time:'17:00', items:['Creatine 3–5 g (any time works)']},
+      {id:'s4', slot:'After training', time:'18:30', items:['Whey / iso protein (1 scoop) if you missed protein at meals']}
+    ],
+    workout:[
+      {day:'Mon', focus:'Full Body A + 30 min walk', ex:['Squat or Leg Press — 3×8–12','Chest Press — 3×8–12','Seated Cable Row — 3×10–12','Lat Pulldown — 3×10–12','Overhead Press — 3×8–12','Plank — 3×30–45s']},
+      {day:'Tue', focus:'Brisk walk 60–90 min', ex:['Slightly breathless pace, can still talk']},
+      {day:'Wed', focus:'Full Body B + 30 min walk', ex:['Hack Squat or Leg Press — 3×10–12','Incline DB Press — 3×10–12','Machine/Bent-over Row — 3×10–12','Lat Pulldown (neutral) — 3×10–12','Seated DB Shoulder Press — 3×10–12','Hip Thrust — 3×10–12','Plank — 3×30–45s']},
+      {day:'Thu', focus:'Brisk walk 60–90 min', ex:['Add gentle hills to raise effort']},
+      {day:'Fri', focus:'Full Body A + 30 min walk', ex:['Repeat Monday — beat last week’s loads or reps']},
+      {day:'Sat', focus:'Long walk 90–120 min', ex:['Steady comfortable pace, good shoes']},
+      {day:'Sun', focus:'Rest or easy stroll', ex:['Recovery — light movement only']}
+    ]
+  };
+}
+
+let plan = load(K.plan, null) || defaultPlan();
+let settings = load(K.set, {remMeals:true, remSupps:true, remFast:true, notif:false});
+let progress = load(K.prog, []);
+let ticks = load(K.ticks, {});   // {date:{itemId:true}}
+let fired = load(K.fired, {});   // {date:{key:true}}
+
+/* ---------- time utilities ---------- */
+function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+function nowMin(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
+function fmtDur(mins){ mins=Math.max(0,Math.round(mins)); const h=Math.floor(mins/60), m=mins%60; return h>0?`${h}h ${pad(m)}m`:`${m}m`; }
+function within(start,end,t){ // handles wrap past midnight; returns true if t in [start,end)
+  if(start<=end) return t>=start && t<end;
+  return t>=start || t<end;
+}
+
+/* ---------- phase / ring ---------- */
+function computePhase(){
+  const s=toMin(plan.window.start), e=toMin(plan.window.end), t=nowMin();
+  const eating = within(s,e,t);
+  let target, targetLabel, spanStart, spanEnd;
+  if(eating){ target=e; targetLabel='fast begins'; spanStart=s; spanEnd=e; }
+  else { target=s; targetLabel='eating opens'; spanStart=e; spanEnd=s; }
+  let rem = target - t; if(rem<0) rem+=1440;
+  let span = spanEnd - spanStart; if(span<=0) span+=1440;
+  let done = span - rem; if(done<0) done+=1440;
+  const frac = Math.min(1, Math.max(0, done/span));
+  return {eating, rem, frac, targetLabel, target};
+}
+function renderRing(){
+  const p=computePhase();
+  const fg=document.getElementById('ringFg');
+  const C=2*Math.PI*86;
+  fg.setAttribute('stroke-dasharray', C.toFixed(1));
+  fg.setAttribute('stroke-dashoffset', (C*(1-p.frac)).toFixed(1));
+  fg.setAttribute('stroke', p.eating? '#2e7d51':'#2E5A8C');
+  document.getElementById('ringTime').textContent = fmtDur(p.rem);
+  document.getElementById('ringSub').textContent = 'until '+p.targetLabel;
+  document.getElementById('phaseLabel').textContent = p.eating? 'Eating window open':'Fasting';
+  document.getElementById('phaseState').textContent = p.eating? 'Fuel up 🍽️':'Stay strong 💧';
+  const pill=document.getElementById('phasePill');
+  pill.className='pill '+(p.eating?'eat':'fast');
+  pill.textContent=p.eating?'EATING':'FASTING';
+  const hp=document.getElementById('statusPill');
+  hp.className='pill '+(p.eating?'eat':'fast'); hp.textContent=p.eating?'eating':'fasting';
+  document.getElementById('headSub').textContent = (p.eating?'Eating window ':'Fasting ')+'· '+fmtDur(p.rem)+' to '+p.targetLabel;
+}
+
+/* ---------- checklist items for today ---------- */
+function todayItems(){
+  const items=[];
+  plan.meals.forEach(m=> items.push({id:m.id, time:m.time, title:`${m.name}`, desc:m.items.join(' · '), tag:'meal'}));
+  plan.supps.forEach(s=> items.push({id:s.id, time:s.time, title:s.slot, desc:s.items.join(' · '), tag:'supp'}));
+  items.sort((a,b)=> toMin(a.time)-toMin(b.time));
+  return items;
+}
+function isTicked(id){ const d=ticks[todayKey()]||{}; return !!d[id]; }
+function toggleTick(id){
+  const dk=todayKey(); ticks[dk]=ticks[dk]||{}; ticks[dk][id]=!ticks[dk][id];
+  save(K.ticks,ticks); renderToday();
+}
+function renderToday(){
+  const list=document.getElementById('todayList'); list.innerHTML='';
+  todayItems().forEach(it=>{
+    const done=isTicked(it.id);
+    const el=document.createElement('div');
+    el.className='check'+(done?' done':'');
+    el.innerHTML=`<div class="box">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div class="between"><span class="title">${it.title}<span class="tag">${it.tag==='meal'?'meal':'supp'}</span></span><span class="time">${it.time}</span></div>
+        <div class="desc">${it.desc}</div>
+      </div>`;
+    el.onclick=()=>toggleTick(it.id);
+    list.appendChild(el);
+  });
+  // next meal card
+  const t=nowMin();
+  const upcoming=plan.meals.filter(m=>toMin(m.time)>=t).sort((a,b)=>toMin(a.time)-toMin(b.time));
+  const nm=upcoming[0]||plan.meals[0];
+  document.getElementById('nextMealTime').textContent=nm.time+(upcoming[0]?'':' (tomorrow)');
+  document.getElementById('nextMealBody').innerHTML=`<b>${nm.name}</b> — ${nm.items.join(' · ')}`;
+}
+function resetToday(){ ticks[todayKey()]={}; save(K.ticks,ticks); renderToday(); toast('Today’s ticks cleared'); }
+
+/* ---------- meals & supps views ---------- */
+function renderMeals(){
+  document.getElementById('mealTargets').textContent=plan.mealTargets||'';
+  const box=document.getElementById('mealsList'); box.innerHTML='';
+  plan.meals.forEach(m=>{
+    const d=document.createElement('div'); d.className='day';
+    d.innerHTML=`<div class="dh"><span>${m.name}</span><span>${m.time}</span></div>
+      <div class="db">${m.items.map(i=>`<div class="small">• ${i}</div>`).join('')}${m.note?`<div class="muted small" style="margin-top:4px">${m.note}</div>`:''}</div>`;
+    box.appendChild(d);
+  });
+  const tw=document.getElementById('mealTimes'); tw.innerHTML='';
+  plan.meals.forEach(m=>{
+    const row=document.createElement('div'); row.className='between'; row.style.margin='8px 0';
+    row.innerHTML=`<span class="small" style="font-weight:600">${m.name}</span>`;
+    const inp=document.createElement('input'); inp.type='time'; inp.value=m.time; inp.style.width='140px';
+    inp.onchange=()=>{ m.time=inp.value; save(K.plan,plan); renderToday(); toast(m.name+' set to '+m.time); };
+    row.appendChild(inp); tw.appendChild(row);
+  });
+}
+function renderSupps(){
+  const box=document.getElementById('suppsList'); box.innerHTML='';
+  plan.supps.forEach(s=>{
+    const d=document.createElement('div'); d.className='day';
+    d.innerHTML=`<div class="dh"><span>${s.slot}</span><span>${s.time}</span></div>
+      <div class="db">${s.items.map(i=>`<div class="small">• ${i}</div>`).join('')}</div>`;
+    box.appendChild(d);
+  });
+  const tw=document.getElementById('suppTimes'); tw.innerHTML='';
+  plan.supps.forEach(s=>{
+    const row=document.createElement('div'); row.className='between'; row.style.margin='8px 0';
+    row.innerHTML=`<span class="small" style="font-weight:600">${s.slot}</span>`;
+    const inp=document.createElement('input'); inp.type='time'; inp.value=s.time; inp.style.width='140px';
+    inp.onchange=()=>{ s.time=inp.value; save(K.plan,plan); renderToday(); toast(s.slot+' set to '+s.time); };
+    row.appendChild(inp); tw.appendChild(row);
+  });
+}
+function renderWorkout(){
+  const box=document.getElementById('workoutList'); box.innerHTML='';
+  plan.workout.forEach(w=>{
+    const d=document.createElement('div'); d.className='day';
+    d.innerHTML=`<div class="dh"><span>${w.day}</span><span>${w.focus}</span></div>
+      <div class="db">${w.ex.map(e=>`<div class="small">• ${e}</div>`).join('')}</div>`;
+    box.appendChild(d);
+  });
+}
+
+/* ---------- fasting window ---------- */
+function renderFast(){
+  document.getElementById('eatStart').value=plan.window.start;
+  document.getElementById('eatEnd').value=plan.window.end;
+  let e=toMin(plan.window.end)-toMin(plan.window.start); if(e<=0)e+=1440;
+  document.getElementById('eLen').textContent=Math.round(e/60)+'h';
+  document.getElementById('fLen').textContent=Math.round((1440-e)/60)+'h';
+  document.getElementById('remMeals').checked=!!settings.remMeals;
+  document.getElementById('remSupps').checked=!!settings.remSupps;
+  document.getElementById('remFast').checked=!!settings.remFast;
+  const on=('Notification'in window)&&Notification.permission==='granted';
+  document.getElementById('nOn').style.background=on?'#2e7d51':'#fff';
+  document.getElementById('nOn').style.borderColor=on?'#2e7d51':'#d6e3f0';
+  document.getElementById('nOn').textContent=on?'✓':'•';
+  document.getElementById('notifState').textContent=on?'Phone alerts are on':'Tap to enable phone alerts';
+}
+function saveWindow(){
+  plan.window.start=document.getElementById('eatStart').value||'12:00';
+  plan.window.end=document.getElementById('eatEnd').value||'20:00';
+  save(K.plan,plan); renderFast(); renderRing(); toast('Window saved'); go('today');
+}
+function shiftWindowPrompt(){ go('fast'); }
+function saveSettings(){
+  settings.remMeals=document.getElementById('remMeals')?.checked ?? settings.remMeals;
+  settings.remSupps=document.getElementById('remSupps')?.checked ?? settings.remSupps;
+  settings.remFast=document.getElementById('remFast')?.checked ?? settings.remFast;
+  const h=document.getElementById('setHeight'); const s=document.getElementById('setStart');
+  if(h&&h.value) plan.height=+h.value;
+  if(s&&s.value) plan.startWeight=+s.value;
+  save(K.set,settings); save(K.plan,plan);
+}
+
+/* ---------- notifications ---------- */
+function enableNotifs(){
+  if(!('Notification'in window)){ toast('This browser has no notifications — reminders will show in-app'); return; }
+  Notification.requestPermission().then(p=>{ settings.notif=(p==='granted'); save(K.set,settings); renderFast();
+    if(p==='granted'){ notify('FastFit reminders on','You’ll get nudges for meals, supplements and your fasting window while the app is open.'); }
+    else toast('Permission not granted — reminders will show in-app'); });
+}
+function notify(title,body){
+  try{ if(('Notification'in window)&&Notification.permission==='granted'){ new Notification(title,{body, icon:iconDataURL()}); return; } }catch(e){}
+  toast('🔔 '+title+' — '+body);
+}
+function checkReminders(){
+  const dk=todayKey(); fired[dk]=fired[dk]||{};
+  const t=nowMin();
+  // meals
+  const push=(cond,id,time,title,body)=>{
+    if(!cond) return; const key=id+'@'+time;
+    if(fired[dk][key]) return;
+    if(t>=toMin(time) && t<toMin(time)+2){ fired[dk][key]=true; save(K.fired,fired); notify(title,body); }
+  };
+  if(settings.remMeals) plan.meals.forEach(m=> push(true,m.id,m.time,'🍽️ '+m.name,m.items[0]));
+  if(settings.remSupps) plan.supps.forEach(s=> push(true,s.id,s.time,'💊 '+s.slot,s.items[0]));
+  if(settings.remFast){
+    push(true,'eatopen',plan.window.start,'🍽️ Eating window open','Time to break your fast — start with '+(plan.meals[0]?.name||'Meal 1')+'.');
+    push(true,'faststart',plan.window.end,'⏳ Fast begins','Kitchen closed. Water, black coffee or plain tea from here.');
+  }
+}
+
+/* ---------- progress ---------- */
+function bmiOf(w){ const h=(plan.height||185)/100; return +(w/(h*h)).toFixed(1); }
+function renderProgress(){
+  progress.sort((a,b)=>a.date.localeCompare(b.date));
+  if(progress.length){
+    const last=progress[progress.length-1], first=progress[0];
+    document.getElementById('pNow').textContent=last.weight;
+    const ch=(last.weight-first.weight);
+    document.getElementById('pChange').textContent=(ch>0?'+':'')+ch.toFixed(1);
+    document.getElementById('pBmi').textContent=bmiOf(last.weight);
+  } else {
+    document.getElementById('pNow').textContent=plan.startWeight||'—';
+    document.getElementById('pChange').textContent='0.0';
+    document.getElementById('pBmi').textContent=plan.startWeight?bmiOf(plan.startWeight):'—';
+  }
+  drawChart();
+  const hw=document.getElementById('histWrap');
+  if(!progress.length){ hw.innerHTML='<div class="muted small">No entries yet.</div>'; return; }
+  let rows=progress.slice().reverse().map((e,i)=>{
+    const idx=progress.length-1-i;
+    return `<tr><td>${e.date}</td><td class="n">${e.weight}</td><td class="n">${e.waist||'—'}</td><td class="n">${bmiOf(e.weight)}</td><td>${e.note||''}<button class="del" onclick="delEntry(${idx})">✕</button></td></tr>`;
+  }).join('');
+  hw.innerHTML=`<table><tr><th>Date</th><th>Kg</th><th>Waist</th><th>BMI</th><th>Notes</th></tr>${rows}</table>`;
+}
+function addEntry(){
+  const d=document.getElementById('inDate').value||todayKey();
+  const w=parseFloat(document.getElementById('inWeight').value);
+  if(!w){ toast('Enter a weight'); return; }
+  const e={date:d, weight:w,
+    waist:parseFloat(document.getElementById('inWaist').value)||null,
+    chest:parseFloat(document.getElementById('inChest').value)||null,
+    bf:parseFloat(document.getElementById('inBf').value)||null,
+    note:document.getElementById('inNote').value.trim()};
+  const ex=progress.findIndex(x=>x.date===d);
+  if(ex>=0) progress[ex]=e; else progress.push(e);
+  save(K.prog,progress);
+  ['inWeight','inWaist','inChest','inBf','inNote'].forEach(id=>document.getElementById(id).value='');
+  renderProgress(); toast('Saved '+d);
+}
+function delEntry(i){ progress.splice(i,1); save(K.prog,progress); renderProgress(); }
+function drawChart(){
+  const c=document.getElementById('chart'), ctx=c.getContext('2d');
+  const W=c.width, H=c.height; ctx.clearRect(0,0,W,H);
+  if(progress.length<1){ ctx.fillStyle='#98a6bb'; ctx.font='13px sans-serif'; ctx.fillText('Log a weigh-in to see your trend',16,H/2); return; }
+  const pts=progress.map(e=>e.weight);
+  const min=Math.min(...pts)-1, max=Math.max(...pts)+1, span=(max-min)||1;
+  const padL=36,padR=12,padT=14,padB=22;
+  const x=i=> padL+(progress.length===1?0.5:i/(progress.length-1))*(W-padL-padR);
+  const y=v=> padT+(1-(v-min)/span)*(H-padT-padB);
+  // grid
+  ctx.strokeStyle='#eef2f8'; ctx.lineWidth=1;
+  for(let g=0;g<=3;g++){ const yy=padT+g/3*(H-padT-padB); ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(W-padR,yy); ctx.stroke();
+    ctx.fillStyle='#98a6bb'; ctx.font='10px sans-serif'; ctx.fillText((max-g/3*span).toFixed(0),4,yy+3); }
+  // line
+  ctx.strokeStyle='#2E5A8C'; ctx.lineWidth=2.5; ctx.beginPath();
+  progress.forEach((e,i)=>{ const xx=x(i), yy=y(e.weight); i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy); }); ctx.stroke();
+  // fill
+  ctx.lineTo(x(progress.length-1),H-padB); ctx.lineTo(x(0),H-padB); ctx.closePath();
+  ctx.fillStyle='rgba(46,90,140,.08)'; ctx.fill();
+  // dots
+  ctx.fillStyle='#2E5A8C'; progress.forEach((e,i)=>{ ctx.beginPath(); ctx.arc(x(i),y(e.weight),3.2,0,7); ctx.fill(); });
+}
+
+/* ---------- excel upload ---------- */
+function handleUpload(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const msg=document.getElementById('uploadMsg');
+  if(typeof XLSX==='undefined'){ msg.innerHTML='<span style="color:#c0392b">Couldn’t load the Excel reader (no connection?). The built-in plan is active; try upload again when online.</span>'; return; }
+  msg.textContent='Reading…';
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const got=parseWorkbook(wb);
+      save(K.plan,plan);
+      renderAll();
+      msg.innerHTML='<span style="color:#2e7d51">Loaded: '+got.join(', ')+'. Your plan is updated.</span>';
+      toast('Plan updated from Excel');
+    }catch(err){ msg.innerHTML='<span style="color:#c0392b">Could not read that file. Built-in plan kept.</span>'; }
+  };
+  r.readAsArrayBuffer(f);
+}
+function sheetAOA(wb,name){
+  const s=wb.Sheets[name]; if(!s) return null;
+  return XLSX.utils.sheet_to_json(s,{header:1,defval:''});
+}
+function findSheet(wb,kw){ return wb.SheetNames.find(n=>n.toLowerCase().includes(kw)); }
+function parseWorkbook(wb){
+  const got=[];
+  // ----- client details -----
+  const woName=findSheet(wb,'workout')||wb.SheetNames[0];
+  const wo=sheetAOA(wb,woName);
+  if(wo){
+    wo.forEach(row=>{
+      row.forEach((cell,ci)=>{
+        const c=String(cell).toLowerCase();
+        const nxt=row[ci+1]!==undefined?row[ci+1]:(row[ci+2]!==undefined?row[ci+2]:'');
+        if(c.includes('height')&&String(nxt).match(/\d/)) { const v=parseFloat(String(nxt).replace(/[^\d.]/g,'')); if(v>100&&v<250) plan.height=v; }
+        if(c.startsWith('weight')&&String(nxt).match(/\d/)) { const v=parseFloat(String(nxt).replace(/[^\d.]/g,'')); if(v>30&&v<400) plan.startWeight=v; }
+      });
+    });
+    // workout days
+    const days=parseWorkoutDays(wo);
+    if(days.length){ plan.workout=days; got.push('workout'); }
+  }
+  // ----- food -----
+  const fName=findSheet(wb,'food');
+  const fa=fName?sheetAOA(wb,fName):null;
+  if(fa){ const meals=parseMeals(fa); if(meals.length){ plan.meals=meals; deriveWindow(); got.push('meals'); } }
+  // ----- supplements -----
+  const sName=findSheet(wb,'supp');
+  const sa=sName?sheetAOA(wb,sName):null;
+  if(sa){ const sp=parseSupps(sa); if(sp.length){ // keep existing times where possible
+      sp.forEach((n,i)=>{ const old=plan.supps.find(o=>o.slot.toLowerCase()===n.slot.toLowerCase()); if(old) n.time=old.time; });
+      plan.supps=sp; got.push('supplements'); } }
+  if(!got.length) got.push('client details');
+  return got;
+}
+function parseMeals(aoa){
+  // find a row whose cells contain "Meal"
+  let hdr=-1;
+  for(let i=0;i<aoa.length;i++){ if(aoa[i].some(c=>/meal\s*\d/i.test(String(c)))){ hdr=i; break; } }
+  if(hdr<0) return [];
+  const cols=[]; aoa[hdr].forEach((c,ci)=>{ const m=String(c).match(/(meal\s*\d|snack)[^\d]*(\d{1,2}:\d{2})?/i); if(m){ const tm=String(c).match(/(\d{1,2}:\d{2})/); cols.push({ci, name:m[1].replace(/\s+/g,' ').replace(/meal/i,'Meal').replace(/snack/i,'Snack'), time:tm?tm[1]:''}); } });
+  if(!cols.length) return [];
+  const meals=cols.map((col,idx)=>{ const items=[]; for(let r=hdr+1;r<Math.min(aoa.length,hdr+8);r++){ const v=String(aoa[r]?.[col.ci]||'').trim(); if(v && !/^swaps|^tips/i.test(v)) items.push(v.replace(/^\(|\)$/g,'')); }
+    return {id:'m'+(idx+1), name:col.name, time:col.time||['12:00','16:00','17:30','19:30'][idx]||'12:00', items:items.filter(x=>x&&!x.startsWith('(')) }; });
+  return meals.filter(m=>m.items.length);
+}
+function parseSupps(aoa){
+  let hdr=-1;
+  for(let i=0;i<aoa.length;i++){ const joined=aoa[i].map(c=>String(c).toLowerCase()).join('|'); if(joined.includes('morning')&&joined.includes('night')){ hdr=i; break; } }
+  if(hdr<0) return [];
+  const slots=[]; aoa[hdr].forEach((c,ci)=>{ const s=String(c).trim(); if(s) slots.push({ci,slot:s}); });
+  const defTimes={'morning':'08:00','night':'22:00','before training':'17:00','after training':'18:30'};
+  return slots.map((col,idx)=>{ const items=[]; for(let r=hdr+1;r<Math.min(aoa.length,hdr+9);r++){ const v=String(aoa[r]?.[col.ci]||'').trim(); if(v && !/^important/i.test(v)) items.push(v); }
+    const key=col.slot.toLowerCase();
+    return {id:'s'+(idx+1), slot:col.slot, time:defTimes[key]||'12:00', items}; }).filter(s=>s.items.length);
+}
+function parseWorkoutDays(aoa){
+  const days=[]; let cur=null;
+  const dayRe=/day\s*\d/i;
+  for(let i=0;i<aoa.length;i++){
+    const row=aoa[i].map(c=>String(c).trim());
+    const dayCell=row.find(c=>dayRe.test(c));
+    if(dayCell){
+      if(cur) days.push(cur);
+      const focus=row.filter(c=>c && !dayRe.test(c) && c.length>2).join(' ') || 'Training';
+      cur={day:dayCell.replace(/\s+/g,' '), focus:focus, ex:[]};
+      continue;
+    }
+    if(cur){
+      const name=row[0];
+      if(name && !/exercise/i.test(name) && name.length>1){
+        const sets=row[1], reps=row[2];
+        let line=name; if(sets&&reps) line+=` — ${sets}×${reps}`; else if(sets) line+=` — ${sets}`;
+        cur.ex.push(line);
+      }
+    }
+  }
+  if(cur) days.push(cur);
+  return days.filter(d=>d.ex.length);
+}
+function deriveWindow(){
+  const times=plan.meals.map(m=>m.time).filter(Boolean).map(toMin).sort((a,b)=>a-b);
+  if(times.length){ plan.window.start=fromMin(times[0]); plan.window.end=fromMin(Math.min(1439,times[times.length-1]+30)); }
+}
+function fromMin(m){ return pad(Math.floor(m/60)%24)+':'+pad(m%60); }
+
+/* ---------- calendar export ---------- */
+function downloadICS(){
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FastFit//EN'];
+  const mk=(time,summary)=>{ const [h,m]=time.split(':'); 
+    lines.push('BEGIN:VEVENT','SUMMARY:'+summary,
+      'RRULE:FREQ=DAILY',
+      'DTSTART:'+dtstamp(h,m),'DURATION:PT10M',
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+summary,'TRIGGER:PT0M','END:VALARM',
+      'END:VEVENT'); };
+  plan.meals.forEach(m=>mk(m.time,'🍽️ '+m.name));
+  plan.supps.forEach(s=>mk(s.time,'💊 '+s.slot));
+  mk(plan.window.start,'🍽️ Eating window opens');
+  mk(plan.window.end,'⏳ Fast begins');
+  lines.push('END:VCALENDAR');
+  const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='FastFit-reminders.ics'; a.click();
+  toast('Calendar file downloaded');
+}
+function dtstamp(h,m){ const d=new Date(); d.setHours(+h,+m,0,0); 
+  return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'T'+pad(+h)+pad(+m)+'00'; }
+
+/* ---------- misc ---------- */
+function iconDataURL(){ return 'data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" rx="28" fill="#2E5A8C"/><text x="64" y="86" font-size="64" text-anchor="middle">🔥</text></svg>'); }
+let toastT;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+function go(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  window.scrollTo(0,0);
+}
+function loadDefaults(force){ if(force && !confirm('Reset meals, supplements and workout to the built-in plan? Your weigh-ins and ticks stay.')) return;
+  const keepH=plan.height, keepS=plan.startWeight; plan=defaultPlan(); plan.height=keepH; plan.startWeight=keepS; save(K.plan,plan); renderAll(); toast('Built-in plan restored'); }
+function wipe(){ if(!confirm('Erase ALL FastFit data on this device? This cannot be undone.')) return;
+  Object.values(K).forEach(k=>localStorage.removeItem(k)); location.reload(); }
+
+function renderAll(){
+  renderRing(); renderToday(); renderMeals(); renderSupps(); renderWorkout(); renderFast(); renderProgress();
+  document.getElementById('setHeight').value=plan.height||185;
+  document.getElementById('setStart').value=plan.startWeight||135;
+  document.getElementById('inDate').value=todayKey();
+}
+
+/* ---------- boot ---------- */
+renderAll();
+setInterval(()=>{ renderRing(); checkReminders(); }, 20000);
+renderRing();
+// Register service worker (offline + installable) — only works over http(s), not file://
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+// Install prompt (Android/Chrome)
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e;
+  const b=document.getElementById('installBtn'); if(b) b.classList.remove('hide'); });
+function installApp(){
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; const b=document.getElementById('installBtn'); if(b) b.classList.add('hide'); }); }
+  else { toast('On iPhone: tap Share, then “Add to Home Screen”'); }
+}
+window.addEventListener('appinstalled', ()=>{ const b=document.getElementById('installBtn'); if(b) b.classList.add('hide'); toast('FastFit installed 🎉'); });
+</script>
+</body>
+</html>
